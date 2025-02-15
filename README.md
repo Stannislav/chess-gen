@@ -1,4 +1,4 @@
-# Chess Gen
+# ♟️Chess Gen♟️
 
 Generate chess positions and practise on Lichess.
 
