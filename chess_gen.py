@@ -129,10 +129,11 @@ class Program:
 
     @staticmethod
     def read_custom() -> list[Piece]:
-        print("[green]Enter custom pieces. White: QRNBP, black: qrnbp.[/green]")
         while True:
             # Read input
-            piece_choice = input("Pieces (enter = abort): ")
+            prompt = "Enter custom pieces (QRNBPqrnbp, enter = abort):"
+            print(f"[green]{prompt}[/green] ", end="", flush=True)
+            piece_choice = input()
             if not piece_choice:
                 return []
 
