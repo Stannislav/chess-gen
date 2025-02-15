@@ -53,7 +53,7 @@ def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True
 class Program:
     CUSTOM: Final[str] = "Custom"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.positions = {
             "Q": [Piece.from_symbol("Q")],
             "R": [Piece.from_symbol("R")],
