@@ -14,128 +14,13 @@ from rich.table import Table
 __version__ = "1.0.0"
 
 
-def print_help(choices: dict[str, str]) -> None:
-    pos_table = Table(show_header=False, box=None)
-    for i, key in choices.items():
-        pos_table.add_row(i, key)
-    cmd_table = Table(show_header=False, box=None)
-    cmd_table.add_row("h", "Help")
-    cmd_table.add_row("enter", "Use previous choice")
-    cmd_table.add_row("q, Ctrl+D", "Quit")
-    columns = Columns([
-        Panel(pos_table, title="Positions"),
-        Panel(cmd_table, title="Commands")
-    ])
-    print(columns)
-
-
 def main() -> None:
     description = "Generate chess positions and practise on Lichess."
     parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
     print(description)
-    loop()
 
-
-def loop() -> None:
-    positions = {
-        "Q": [Piece.from_symbol("Q")],
-        "R": [Piece.from_symbol("R")],
-        "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
-        "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
-        "Custom": [],
-    }
-    choices = {str(i): key for i, key in enumerate(positions, 1)}
-    prev_choice = ""
-    prev_piece_symbols = []
-    print_help(choices)
-    while True:
-        try:
-            if prev_choice:
-                prompt = f"Position (enter = {choices[prev_choice]}): "
-            else:
-                prompt = "Position: "
-            choice = input(prompt).lower()
-        except EOFError:
-            choice = "q"
-        if choice == "q":
-            print("\nBye!")
-            return
-        if choice == "h":
-            print_help(choices)
-            continue
-        if not choice:
-            choice = prev_choice
-        if choice not in choices:
-            print("[red]Please enter a valid choice.[/red]")
-            continue
-
-        position_idx = choices[choice]
-        prev_choice = choice
-
-        if position_idx == "Custom":
-            # Get input
-            print("[green]White: QRNBP[/green]")
-            print("[green]Black: qrnbp[/green]")
-            if prev_piece_symbols:
-                prompt = f"Pieces (enter = {''.join(prev_piece_symbols)}): "
-            else:
-                prompt = f"Pieces: "
-            piece_choice = input(prompt)
-            if piece_choice:
-                piece_symbols = [s for s in piece_choice if s and s != ","]
-            else:
-                piece_symbols = prev_piece_symbols
-
-            # Parse input
-            bad_symbols = []
-            pieces = []
-            for symbol in piece_symbols:
-                if symbol == "K" or symbol == "k":
-                    bad_symbols.append(symbol)
-                try:
-                    piece = Piece.from_symbol(symbol)
-                except ValueError:
-                    bad_symbols.append(symbol)
-                else:
-                    pieces.append(piece)
-            if bad_symbols:
-                print(f"[red]Unknown piece(s): {', '.join(bad_symbols)}.[/red]")
-                continue
-            if not pieces:
-                print(f"[red]No pieces selected.")
-                continue
-
-            # Validate input
-            bad_input = False
-            if sum(piece.color == chess.WHITE for piece in pieces) > 15:
-                print(f"[red]There can not be more than 16 white pieces.[/red]")
-                bad_input = True
-            if sum(piece.color == chess.BLACK for piece in pieces) > 15:
-                print(f"[red]There can not be more than 16 black pieces.[/red]")
-                bad_input = True
-            if sum(piece.color == chess.BLACK for piece in pieces) > 15:
-                print(f"[red]There can not be more than 16 black pieces.[/red]")
-                bad_input = True
-            if sum(piece == Piece.from_symbol("P") for piece in pieces) > 8:
-                print(f"[red]There can not be more than 8 white pawns.[/red]")
-                bad_input = True
-            if sum(piece == Piece.from_symbol("p") for piece in pieces) > 8:
-                print(f"[red]There can not be more than 8 black pawns.[/red]")
-                bad_input = True
-            if bad_input:
-                continue
-
-            prev_piece_symbols = piece_symbols
-        else:
-            pieces = positions[choices[choice]]
-
-        board = init_board()
-        if set_randomly(pieces, board):
-            print(board)
-            print(f"https://lichess.org/?fen={quote(board.fen())}#ai")
-        else:
-            print(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
+    Program().loop()
 
 
 def init_board() -> Board:
@@ -163,6 +48,124 @@ def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True
         board.remove_piece_at(square)
 
     return False
+
+
+class Program:
+    def __init__(self):
+        self.positions = {
+            "Q": [Piece.from_symbol("Q")],
+            "R": [Piece.from_symbol("R")],
+            "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
+            "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
+            "Custom": [],
+        }
+        self.choices = {str(i): key for i, key in enumerate(self.positions, 1)}
+        self.prev_choice = ""
+        self.prev_piece_symbols = []
+
+    def print_help(self) -> None:
+        pos_table = Table(show_header=False, box=None)
+        for i, key in self.choices.items():
+            pos_table.add_row(i, key)
+        cmd_table = Table(show_header=False, box=None)
+        cmd_table.add_row("h", "Help")
+        cmd_table.add_row("enter", "Use previous choice")
+        cmd_table.add_row("q, Ctrl+D", "Quit")
+        columns = Columns([
+            Panel(pos_table, title="Positions"),
+            Panel(cmd_table, title="Commands")
+        ])
+        print(columns)
+
+    def loop(self) -> None:
+        self.print_help()
+        while True:
+            try:
+                if self.prev_choice:
+                    prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
+                else:
+                    prompt = "Position: "
+                choice = input(prompt).lower()
+            except EOFError:
+                choice = "q"
+            if choice == "q":
+                print("\nBye!")
+                return
+            if choice == "h":
+                self.print_help()
+                continue
+            if not choice:
+                choice = self.prev_choice
+            if choice not in self.choices:
+                print("[red]Please enter a valid choice.[/red]")
+                continue
+
+            position_idx = self.choices[choice]
+            self.prev_choice = choice
+
+            if position_idx == "Custom":
+                # Get input
+                print("[green]White: QRNBP[/green]")
+                print("[green]Black: qrnbp[/green]")
+                if self.prev_piece_symbols:
+                    prompt = f"Pieces (enter = {''.join(self.prev_piece_symbols)}): "
+                else:
+                    prompt = f"Pieces: "
+                piece_choice = input(prompt)
+                if piece_choice:
+                    piece_symbols = [s for s in piece_choice if s and s != ","]
+                else:
+                    piece_symbols = self.prev_piece_symbols
+
+                # Parse input
+                bad_symbols = []
+                pieces = []
+                for symbol in piece_symbols:
+                    if symbol == "K" or symbol == "k":
+                        bad_symbols.append(symbol)
+                    try:
+                        piece = Piece.from_symbol(symbol)
+                    except ValueError:
+                        bad_symbols.append(symbol)
+                    else:
+                        pieces.append(piece)
+                if bad_symbols:
+                    print(f"[red]Unknown piece(s): {', '.join(bad_symbols)}.[/red]")
+                    continue
+                if not pieces:
+                    print(f"[red]No pieces selected.")
+                    continue
+
+                # Validate input
+                bad_input = False
+                if sum(piece.color == chess.WHITE for piece in pieces) > 15:
+                    print(f"[red]There can not be more than 16 white pieces.[/red]")
+                    bad_input = True
+                if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+                    print(f"[red]There can not be more than 16 black pieces.[/red]")
+                    bad_input = True
+                if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+                    print(f"[red]There can not be more than 16 black pieces.[/red]")
+                    bad_input = True
+                if sum(piece == Piece.from_symbol("P") for piece in pieces) > 8:
+                    print(f"[red]There can not be more than 8 white pawns.[/red]")
+                    bad_input = True
+                if sum(piece == Piece.from_symbol("p") for piece in pieces) > 8:
+                    print(f"[red]There can not be more than 8 black pawns.[/red]")
+                    bad_input = True
+                if bad_input:
+                    continue
+
+                self.prev_piece_symbols = piece_symbols
+            else:
+                pieces = self.positions[self.choices[choice]]
+
+            board = init_board()
+            if set_randomly(pieces, board):
+                print(board)
+                print(f"https://lichess.org/?fen={quote(board.fen())}#ai")
+            else:
+                print(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
 
 
 if __name__ == "__main__":
