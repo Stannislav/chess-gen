@@ -1,4 +1,5 @@
 """Generate chess positions and practise on Lichess."""
+
 from __future__ import annotations
 
 import argparse
@@ -6,8 +7,8 @@ import random
 from typing import Final
 from urllib.parse import quote
 
-from chess import BLACK, Board, PIECE_SYMBOLS, Piece, WHITE
-from rich import print
+from chess import BLACK, PIECE_SYMBOLS, WHITE, Board, Piece
+from rich import print as rprint
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
@@ -22,7 +23,7 @@ def main() -> None:
     description = "Generate chess positions and practise on Lichess."
     parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
-    print(description)
+    rprint(description)
     Program().loop()
 
 
@@ -36,7 +37,7 @@ def init_board() -> Board:
     return board
 
 
-def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True) -> bool:
+def set_randomly(pieces: list[Piece], board: Board, *, check_game_over: bool = True) -> bool:
     """Set the piece on a random legal square on the board."""
     if not pieces:
         return not (check_game_over and board.is_game_over())
@@ -46,7 +47,7 @@ def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True
     random.shuffle(squares)
     for square in squares:
         board.set_piece_at(square, piece)
-        if board.is_valid() and set_randomly(pieces[1:], board, check_game_over):
+        if board.is_valid() and set_randomly(pieces[1:], board, check_game_over=check_game_over):
             return True
         board.remove_piece_at(square)
 
@@ -66,7 +67,7 @@ class Program:
         }
         self.choices = {str(i): key for i, key in enumerate(self.positions, 1)}
         self.prev_choice = ""
-        self.prev_pieces = []
+        self.prev_pieces: list[Piece] = []
 
     def print_help(self) -> None:
         pos_table = Table(show_header=False, box=None)
@@ -76,11 +77,8 @@ class Program:
         cmd_table.add_row("h", "Help")
         cmd_table.add_row("enter", "Use previous choice")
         cmd_table.add_row("q, Ctrl+D", "Quit")
-        columns = Columns([
-            Panel(pos_table, title="Positions"),
-            Panel(cmd_table, title="Commands")
-        ])
-        print(columns)
+        columns = Columns([Panel(pos_table, title="Positions"), Panel(cmd_table, title="Commands")])
+        rprint(columns)
 
     def loop(self) -> None:
         self.print_help()
@@ -88,7 +86,8 @@ class Program:
             try:
                 if self.prev_choice:
                     if self.choices[self.prev_choice] == self.CUSTOM and self.prev_pieces:
-                        prompt = f"Position (enter = {self.CUSTOM} - {''.join(str(p) for p in self.prev_pieces)}): "
+                        prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
+                        prompt = f"Position (enter = {self.CUSTOM} - {prev_pieces_str}): "
                     else:
                         prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
                 else:
@@ -97,7 +96,7 @@ class Program:
             except EOFError:
                 choice = "q"
             if choice == "q":
-                print("\nBye!")
+                rprint("\nBye!")
                 return
             if choice == "h":
                 self.print_help()
@@ -107,7 +106,7 @@ class Program:
             else:
                 self.prev_pieces.clear()
             if choice not in self.choices:
-                print("[red]Please enter a valid choice.[/red]")
+                rprint("[red]Please enter a valid choice.[/red]")
                 continue
             self.prev_choice = choice
 
@@ -122,17 +121,17 @@ class Program:
 
             board = init_board()
             if set_randomly(pieces, board):
-                print(board)
-                print(f"https://lichess.org/?fen={quote(board.fen())}#ai")
+                rprint(board)
+                rprint(f"https://lichess.org/?fen={quote(board.fen())}#ai")
             else:
-                print(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
+                rprint(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
 
     @staticmethod
     def read_custom() -> list[Piece]:
         while True:
             # Read input
             prompt = "Enter custom pieces (QRNBPqrnbp, enter = abort):"
-            print(f"[green]{prompt}[/green] ", end="", flush=True)
+            rprint(f"[green]{prompt}[/green] ", end="", flush=True)
             piece_choice = input()
             if not piece_choice:
                 return []
@@ -146,22 +145,22 @@ class Program:
                 else:
                     pieces.append(Piece.from_symbol(symbol))
             if bad_symbols:
-                print(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
+                rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
                 continue
 
             # Validate input
             bad_input = False
             if sum(piece.color == WHITE for piece in pieces) > 15:
-                print(f"[red]There can not be more than 16 white pieces.[/red]")
+                rprint("[red]There can not be more than 16 white pieces.[/red]")
                 bad_input = True
             if sum(piece.color == BLACK for piece in pieces) > 15:
-                print(f"[red]There can not be more than 16 black pieces.[/red]")
+                rprint("[red]There can not be more than 16 black pieces.[/red]")
                 bad_input = True
             if sum(piece == WHITE_PAWN for piece in pieces) > 8:
-                print(f"[red]There can not be more than 8 white pawns.[/red]")
+                rprint("[red]There can not be more than 8 white pawns.[/red]")
                 bad_input = True
             if sum(piece == BLACK_PAWN for piece in pieces) > 8:
-                print(f"[red]There can not be more than 8 black pawns.[/red]")
+                rprint("[red]There can not be more than 8 black pawns.[/red]")
                 bad_input = True
             if bad_input:
                 continue

@@ -19,3 +19,22 @@ Source = "https://github.com/Stannislav/chess-gen"
 
 [project.scripts]
 chessg = "chess_gen:main"
+
+[project.optional-dependencies]
+dev = ["flit", "mypy", "ruff"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+lint.select = ["ALL"]
+lint.ignore = [
+    "C90",    # mccabe, TODO: fix
+    "COM812", # flake8-commas, missing-trailing-comma, conflicts with ruff format
+    "D",      # pydocstyle, TODO: fix
+    "PLR",    # Pylint - Refactor, TODO: fix
+    "S311",   # flake8-bandit, suspicious-non-cryptographic-random-usage, false positive
+]
+
+[tool.mypy]
+packages = "chess_gen"
+strict = true
