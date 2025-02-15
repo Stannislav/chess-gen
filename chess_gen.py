@@ -1,3 +1,4 @@
+"""Generate chess positions and practise on Lichess."""
 import argparse
 import random
 from urllib.parse import quote
@@ -7,6 +8,8 @@ from rich import print
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
+
+__version__ = "1.0.0"
 
 
 def print_help(choices: dict[str, str]) -> None:
