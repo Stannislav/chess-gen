@@ -39,8 +39,8 @@ def main() -> None:
 
 def loop() -> None:
     positions = {
-        "R": [Piece.from_symbol("R")],
         "Q": [Piece.from_symbol("Q")],
+        "R": [Piece.from_symbol("R")],
         "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
         "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
         "Custom": [],
