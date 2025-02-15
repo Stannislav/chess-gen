@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import random
+from typing import Final
 from urllib.parse import quote
 
 from chess import BLACK, Board, Piece, WHITE
@@ -19,7 +20,6 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
     print(description)
-
     Program().loop()
 
 
@@ -51,7 +51,7 @@ def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True
 
 
 class Program:
-    CUSTOM = "Custom"
+    CUSTOM: Final[str] = "Custom"
 
     def __init__(self):
         self.positions = {
