@@ -1,4 +1,5 @@
 """Generate chess positions and practise on Lichess."""
+
 from __future__ import annotations
 
 import argparse
@@ -76,10 +77,7 @@ class Program:
         cmd_table.add_row("h", "Help")
         cmd_table.add_row("enter", "Use previous choice")
         cmd_table.add_row("q, Ctrl+D", "Quit")
-        columns = Columns([
-            Panel(pos_table, title="Positions"),
-            Panel(cmd_table, title="Commands")
-        ])
+        columns = Columns([Panel(pos_table, title="Positions"), Panel(cmd_table, title="Commands")])
         print(columns)
 
     def loop(self) -> None:
@@ -152,16 +150,16 @@ class Program:
             # Validate input
             bad_input = False
             if sum(piece.color == WHITE for piece in pieces) > 15:
-                print(f"[red]There can not be more than 16 white pieces.[/red]")
+                print("[red]There can not be more than 16 white pieces.[/red]")
                 bad_input = True
             if sum(piece.color == BLACK for piece in pieces) > 15:
-                print(f"[red]There can not be more than 16 black pieces.[/red]")
+                print("[red]There can not be more than 16 black pieces.[/red]")
                 bad_input = True
             if sum(piece == WHITE_PAWN for piece in pieces) > 8:
-                print(f"[red]There can not be more than 8 white pawns.[/red]")
+                print("[red]There can not be more than 8 white pawns.[/red]")
                 bad_input = True
             if sum(piece == BLACK_PAWN for piece in pieces) > 8:
-                print(f"[red]There can not be more than 8 black pawns.[/red]")
+                print("[red]There can not be more than 8 black pawns.[/red]")
                 bad_input = True
             if bad_input:
                 continue
