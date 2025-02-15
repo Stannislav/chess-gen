@@ -27,7 +27,7 @@ dev = ["flit", "mypy", "ruff"]
 target-version = "py39"
 line-length = 100
 lint.select = ["ALL"]
-lint.ignore = ["A004", "COM812", "D", "C90", "PLR", "S311"]
+lint.ignore = ["COM812", "D", "C90", "PLR", "S311"]
 
 [tool.mypy]
 packages = "chess_gen"
