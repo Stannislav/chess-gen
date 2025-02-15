@@ -21,7 +21,7 @@ Source = "https://github.com/Stannislav/chess-gen"
 chessg = "chess_gen:main"
 
 [project.optional-dependencies]
-dev = ["ruff"]
+dev = ["flit", "ruff"]
 
 [tool.ruff]
 target-version = "py39"
