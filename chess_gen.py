@@ -5,8 +5,7 @@ import argparse
 import random
 from urllib.parse import quote
 
-import chess
-from chess import Board, Piece
+from chess import BLACK, Board, Piece, WHITE
 from rich import print
 from rich.columns import Columns
 from rich.panel import Panel
@@ -151,13 +150,13 @@ class Program:
 
         # Validate input
         bad_input = False
-        if sum(piece.color == chess.WHITE for piece in pieces) > 15:
+        if sum(piece.color == WHITE for piece in pieces) > 15:
             print(f"[red]There can not be more than 16 white pieces.[/red]")
             bad_input = True
-        if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+        if sum(piece.color == BLACK for piece in pieces) > 15:
             print(f"[red]There can not be more than 16 black pieces.[/red]")
             bad_input = True
-        if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+        if sum(piece.color == BLACK for piece in pieces) > 15:
             print(f"[red]There can not be more than 16 black pieces.[/red]")
             bad_input = True
         if sum(piece == Piece.from_symbol("P") for piece in pieces) > 8:
