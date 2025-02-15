@@ -14,6 +14,9 @@ from rich.table import Table
 
 __version__ = "1.0.0"
 
+WHITE_PAWN = Piece.from_symbol("P")
+BLACK_PAWN = Piece.from_symbol("p")
+
 
 def main() -> None:
     description = "Generate chess positions and practise on Lichess."
@@ -125,50 +128,48 @@ class Program:
                 print(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
 
     @staticmethod
-    def read_custom() -> list[Piece] | None:
-        # Get input
+    def read_custom() -> list[Piece]:
         print("[green]Enter custom pieces. White: QRNBP, black: qrnbp.[/green]")
-        piece_choice = input("Pieces (enter = abort): ")
-        if not piece_choice:
-            return []
+        while True:
+            # Read input
+            piece_choice = input("Pieces (enter = abort): ")
+            if not piece_choice:
+                return []
 
-        # Parse input
-        bad_symbols = set()
-        pieces = []
-        for symbol in [c for c in piece_choice if c and c != ","]:
-            if symbol == "K" or symbol == "k":
-                bad_symbols.add(symbol)
-            try:
-                piece = Piece.from_symbol(symbol)
-            except ValueError:
-                bad_symbols.add(symbol)
-            else:
-                pieces.append(piece)
-        if bad_symbols:
-            print(f"[red]Unknown piece(s): {', '.join(sorted(bad_symbols))}.[/red]")
-            return None
+            # Parse input
+            bad_symbols = set()
+            pieces = []
+            for symbol in [c for c in piece_choice if c and c != ","]:
+                if symbol == "K" or symbol == "k":
+                    bad_symbols.add(symbol)
+                try:
+                    piece = Piece.from_symbol(symbol)
+                except ValueError:
+                    bad_symbols.add(symbol)
+                else:
+                    pieces.append(piece)
+            if bad_symbols:
+                print(f"[red]Unknown piece(s): {', '.join(sorted(bad_symbols))}.[/red]")
+                continue
 
-        # Validate input
-        bad_input = False
-        if sum(piece.color == WHITE for piece in pieces) > 15:
-            print(f"[red]There can not be more than 16 white pieces.[/red]")
-            bad_input = True
-        if sum(piece.color == BLACK for piece in pieces) > 15:
-            print(f"[red]There can not be more than 16 black pieces.[/red]")
-            bad_input = True
-        if sum(piece.color == BLACK for piece in pieces) > 15:
-            print(f"[red]There can not be more than 16 black pieces.[/red]")
-            bad_input = True
-        if sum(piece == Piece.from_symbol("P") for piece in pieces) > 8:
-            print(f"[red]There can not be more than 8 white pawns.[/red]")
-            bad_input = True
-        if sum(piece == Piece.from_symbol("p") for piece in pieces) > 8:
-            print(f"[red]There can not be more than 8 black pawns.[/red]")
-            bad_input = True
-        if bad_input:
-            return None
+            # Validate input
+            bad_input = False
+            if sum(piece.color == WHITE for piece in pieces) > 15:
+                print(f"[red]There can not be more than 16 white pieces.[/red]")
+                bad_input = True
+            if sum(piece.color == BLACK for piece in pieces) > 15:
+                print(f"[red]There can not be more than 16 black pieces.[/red]")
+                bad_input = True
+            if sum(piece == WHITE_PAWN for piece in pieces) > 8:
+                print(f"[red]There can not be more than 8 white pawns.[/red]")
+                bad_input = True
+            if sum(piece == BLACK_PAWN for piece in pieces) > 8:
+                print(f"[red]There can not be more than 8 black pawns.[/red]")
+                bad_input = True
+            if bad_input:
+                continue
 
-        return pieces
+            return pieces
 
 
 if __name__ == "__main__":
