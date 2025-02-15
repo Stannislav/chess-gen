@@ -67,7 +67,7 @@ class Program:
         }
         self.choices = {str(i): key for i, key in enumerate(self.positions, 1)}
         self.prev_choice = ""
-        self.prev_pieces = []
+        self.prev_pieces: list[Piece] = []
 
     def print_help(self) -> None:
         pos_table = Table(show_header=False, box=None)
