@@ -101,19 +101,17 @@ class Program:
                 continue
             if not choice:
                 choice = self.prev_choice
+            else:
+                self.prev_pieces.clear()
             if choice not in self.choices:
                 print("[red]Please enter a valid choice.[/red]")
                 continue
-
-            position_idx = self.choices[choice]
             self.prev_choice = choice
 
-            if position_idx == "Custom":
-                pieces = self.read_custom()
-                if pieces is None:
-                    continue
-                if len(pieces) == 0:
-                    print(f"[red]No pieces selected.")
+            position_idx = self.choices[choice]
+            if position_idx == self.CUSTOM:
+                pieces = self.prev_pieces or self.read_custom()
+                if not pieces:
                     continue
                 self.prev_pieces = pieces
             else:
@@ -130,22 +128,24 @@ class Program:
     def read_custom() -> list[Piece] | None:
         # Get input
         print("[green]Enter custom pieces. White: QRNBP, black: qrnbp.[/green]")
-        piece_choice = input("Pieces: ")
+        piece_choice = input("Pieces (enter = abort): ")
+        if not piece_choice:
+            return []
 
         # Parse input
-        bad_symbols = []
+        bad_symbols = set()
         pieces = []
         for symbol in [c for c in piece_choice if c and c != ","]:
             if symbol == "K" or symbol == "k":
-                bad_symbols.append(symbol)
+                bad_symbols.add(symbol)
             try:
                 piece = Piece.from_symbol(symbol)
             except ValueError:
-                bad_symbols.append(symbol)
+                bad_symbols.add(symbol)
             else:
                 pieces.append(piece)
         if bad_symbols:
-            print(f"[red]Unknown piece(s): {', '.join(bad_symbols)}.[/red]")
+            print(f"[red]Unknown piece(s): {', '.join(sorted(bad_symbols))}.[/red]")
             return None
 
         # Validate input
