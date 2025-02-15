@@ -4,7 +4,7 @@ Generate chess positions and practise on Lichess.
 
 The generated positions are random, which is different to Lichess' presets.
 
-Example:
+## Example
 
 ```shell
 $ chessg
@@ -28,5 +28,10 @@ Choice: 3
 https://lichess.org/?fen=4k3/8/8/4BB2/8/8/5K2/8%20w%20-%20-%200%201#ai
 Choice: ^D
 Bye!
+```
 
+## Installation
+
+```shell
+pip install chess-gen
 ```
