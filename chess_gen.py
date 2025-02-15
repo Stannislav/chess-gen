@@ -1,8 +1,10 @@
 """Generate chess positions and practise on Lichess."""
 import argparse
 import random
+from typing import Collection
 from urllib.parse import quote
 
+import chess
 from chess import Board, Piece
 from rich import print
 from rich.columns import Columns
@@ -41,14 +43,19 @@ def loop() -> None:
         "Q": [Piece.from_symbol("Q")],
         "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
         "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
-        "N+N": [Piece.from_symbol("N"), Piece.from_symbol("N")],
+        "Custom": [],
     }
     choices = {str(i): key for i, key in enumerate(positions, 1)}
     prev_choice = ""
+    prev_piece_symbols = []
     print_help(choices)
     while True:
         try:
-            choice = input("Choice: ").lower()
+            if prev_choice:
+                prompt = f"Position (enter = {choices[prev_choice]}): "
+            else:
+                prompt = "Position: "
+            choice = input(prompt).lower()
         except EOFError:
             choice = "q"
         if choice == "q":
@@ -60,16 +67,75 @@ def loop() -> None:
         if not choice:
             choice = prev_choice
         if choice not in choices:
+            print("[red]Please enter a valid choice.[/red]")
             continue
 
+        position_idx = choices[choice]
+        prev_choice = choice
+
+        if position_idx == "Custom":
+            # Get input
+            print("[green]White: QRNBP[/green]")
+            print("[green]Black: qrnbp[/green]")
+            if prev_piece_symbols:
+                prompt = f"Pieces (enter = {''.join(prev_piece_symbols)}): "
+            else:
+                prompt = f"Pieces: "
+            piece_choice = input(prompt)
+            if piece_choice:
+                piece_symbols = [s for s in piece_choice if s and s != ","]
+            else:
+                piece_symbols = prev_piece_symbols
+
+            # Parse input
+            bad_symbols = []
+            pieces = []
+            for symbol in piece_symbols:
+                if symbol == "K" or symbol == "k":
+                    bad_symbols.append(symbol)
+                try:
+                    piece = Piece.from_symbol(symbol)
+                except ValueError:
+                    bad_symbols.append(symbol)
+                else:
+                    pieces.append(piece)
+            if bad_symbols:
+                print(f"[red]Unknown piece(s): {', '.join(bad_symbols)}.[/red]")
+                continue
+            if not pieces:
+                print(f"[red]No pieces selected.")
+                continue
+
+            # Validate input
+            bad_input = False
+            if sum(piece.color == chess.WHITE for piece in pieces) > 15:
+                print(f"[red]There can not be more than 16 white pieces.[/red]")
+                bad_input = True
+            if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+                print(f"[red]There can not be more than 16 black pieces.[/red]")
+                bad_input = True
+            if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+                print(f"[red]There can not be more than 16 black pieces.[/red]")
+                bad_input = True
+            if sum(piece == Piece.from_symbol("P") for piece in pieces) > 8:
+                print(f"[red]There can not be more than 8 white pawns.[/red]")
+                bad_input = True
+            if sum(piece == Piece.from_symbol("p") for piece in pieces) > 8:
+                print(f"[red]There can not be more than 8 black pawns.[/red]")
+                bad_input = True
+            if bad_input:
+                continue
+
+            prev_piece_symbols = piece_symbols
+        else:
+            pieces = positions[choices[choice]]
+
         board = init_board()
-        pieces = positions[choices[choice]]
         if set_randomly(pieces, board):
             print(board)
             print(f"https://lichess.org/?fen={quote(board.fen())}#ai")
         else:
             print(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
-        prev_choice = choice
 
 
 def init_board() -> Board:
