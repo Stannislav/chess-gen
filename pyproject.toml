@@ -27,7 +27,13 @@ dev = ["flit", "mypy", "ruff"]
 target-version = "py39"
 line-length = 100
 lint.select = ["ALL"]
-lint.ignore = ["COM812", "D", "C90", "PLR", "S311"]
+lint.ignore = [
+    "C90",    # mccabe, TODO: fix
+    "COM812", # flake8-commas, missing-trailing-comma, conflicts with ruff format
+    "D",      # pydocstyle, TODO: fix
+    "PLR",    # Pylint - Refactor, TODO: fix
+    "S311",   # flake8-bandit, suspicious-non-cryptographic-random-usage, false positive
+]
 
 [tool.mypy]
 packages = "chess_gen"
