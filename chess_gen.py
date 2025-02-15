@@ -6,7 +6,7 @@ import random
 from typing import Final
 from urllib.parse import quote
 
-from chess import BLACK, Board, Piece, WHITE
+from chess import BLACK, Board, PIECE_SYMBOLS, Piece, WHITE
 from rich import print
 from rich.columns import Columns
 from rich.panel import Panel
@@ -141,16 +141,12 @@ class Program:
             bad_symbols = set()
             pieces = []
             for symbol in [c for c in piece_choice if c and c != ","]:
-                if symbol == "K" or symbol == "k":
-                    bad_symbols.add(symbol)
-                try:
-                    piece = Piece.from_symbol(symbol)
-                except ValueError:
+                if symbol == "K" or symbol == "k" or symbol.lower() not in PIECE_SYMBOLS:
                     bad_symbols.add(symbol)
                 else:
-                    pieces.append(piece)
+                    pieces.append(Piece.from_symbol(symbol))
             if bad_symbols:
-                print(f"[red]Unknown piece(s): {', '.join(sorted(bad_symbols))}.[/red]")
+                print(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
                 continue
 
             # Validate input
