@@ -1,7 +1,6 @@
 """Generate chess positions and practise on Lichess."""
 import argparse
 import random
-from typing import Collection
 from urllib.parse import quote
 
 import chess
