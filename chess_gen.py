@@ -50,13 +50,15 @@ def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True
 
 
 class Program:
+    CUSTOM = "Custom"
+
     def __init__(self):
         self.positions = {
             "Q": [Piece.from_symbol("Q")],
             "R": [Piece.from_symbol("R")],
             "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
             "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
-            "Custom": [],
+            self.CUSTOM: [],
         }
         self.choices = {str(i): key for i, key in enumerate(self.positions, 1)}
         self.prev_choice = ""
@@ -81,7 +83,10 @@ class Program:
         while True:
             try:
                 if self.prev_choice:
-                    prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
+                    if self.choices[self.prev_choice] == self.CUSTOM and self.prev_piece_symbols:
+                        prompt = f"Position (enter = {self.CUSTOM} - {''.join(self.prev_piece_symbols)}): "
+                    else:
+                        prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
                 else:
                     prompt = "Position: "
                 choice = input(prompt).lower()
