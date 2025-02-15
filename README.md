@@ -1,4 +1,5 @@
-# ♟️Chess Gen♟️
+# Chess Gen
+[![Latest PyPi version](https://img.shields.io/pypi/v/chess-gen.svg)](https://pypi.org/project/chess-gen/)
 
 Generate chess positions and practise on Lichess.
 
