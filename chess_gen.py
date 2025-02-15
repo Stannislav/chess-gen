@@ -7,7 +7,7 @@ import random
 from typing import Final
 from urllib.parse import quote
 
-from chess import BLACK, Board, PIECE_SYMBOLS, Piece, WHITE
+from chess import BLACK, PIECE_SYMBOLS, WHITE, Board, Piece
 from rich import print
 from rich.columns import Columns
 from rich.panel import Panel
@@ -37,7 +37,7 @@ def init_board() -> Board:
     return board
 
 
-def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True) -> bool:
+def set_randomly(pieces: list[Piece], board: Board, *, check_game_over: bool = True) -> bool:
     """Set the piece on a random legal square on the board."""
     if not pieces:
         return not (check_game_over and board.is_game_over())
@@ -47,7 +47,7 @@ def set_randomly(pieces: list[Piece], board: Board, check_game_over: bool = True
     random.shuffle(squares)
     for square in squares:
         board.set_piece_at(square, piece)
-        if board.is_valid() and set_randomly(pieces[1:], board, check_game_over):
+        if board.is_valid() and set_randomly(pieces[1:], board, check_game_over=check_game_over):
             return True
         board.remove_piece_at(square)
 
@@ -86,7 +86,8 @@ class Program:
             try:
                 if self.prev_choice:
                     if self.choices[self.prev_choice] == self.CUSTOM and self.prev_pieces:
-                        prompt = f"Position (enter = {self.CUSTOM} - {''.join(str(p) for p in self.prev_pieces)}): "
+                        prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
+                        prompt = f"Position (enter = {self.CUSTOM} - {prev_pieces_str}): "
                     else:
                         prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
                 else:
