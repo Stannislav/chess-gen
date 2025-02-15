@@ -1,4 +1,6 @@
 """Generate chess positions and practise on Lichess."""
+from __future__ import annotations
+
 import argparse
 import random
 from urllib.parse import quote
@@ -62,7 +64,7 @@ class Program:
         }
         self.choices = {str(i): key for i, key in enumerate(self.positions, 1)}
         self.prev_choice = ""
-        self.prev_piece_symbols = []
+        self.prev_pieces = []
 
     def print_help(self) -> None:
         pos_table = Table(show_header=False, box=None)
@@ -83,8 +85,8 @@ class Program:
         while True:
             try:
                 if self.prev_choice:
-                    if self.choices[self.prev_choice] == self.CUSTOM and self.prev_piece_symbols:
-                        prompt = f"Position (enter = {self.CUSTOM} - {''.join(self.prev_piece_symbols)}): "
+                    if self.choices[self.prev_choice] == self.CUSTOM and self.prev_pieces:
+                        prompt = f"Position (enter = {self.CUSTOM} - {''.join(str(p) for p in self.prev_pieces)}): "
                     else:
                         prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
                 else:
@@ -108,59 +110,13 @@ class Program:
             self.prev_choice = choice
 
             if position_idx == "Custom":
-                # Get input
-                print("[green]White: QRNBP[/green]")
-                print("[green]Black: qrnbp[/green]")
-                if self.prev_piece_symbols:
-                    prompt = f"Pieces (enter = {''.join(self.prev_piece_symbols)}): "
-                else:
-                    prompt = f"Pieces: "
-                piece_choice = input(prompt)
-                if piece_choice:
-                    piece_symbols = [s for s in piece_choice if s and s != ","]
-                else:
-                    piece_symbols = self.prev_piece_symbols
-
-                # Parse input
-                bad_symbols = []
-                pieces = []
-                for symbol in piece_symbols:
-                    if symbol == "K" or symbol == "k":
-                        bad_symbols.append(symbol)
-                    try:
-                        piece = Piece.from_symbol(symbol)
-                    except ValueError:
-                        bad_symbols.append(symbol)
-                    else:
-                        pieces.append(piece)
-                if bad_symbols:
-                    print(f"[red]Unknown piece(s): {', '.join(bad_symbols)}.[/red]")
+                pieces = self.read_custom()
+                if pieces is None:
                     continue
-                if not pieces:
+                if len(pieces) == 0:
                     print(f"[red]No pieces selected.")
                     continue
-
-                # Validate input
-                bad_input = False
-                if sum(piece.color == chess.WHITE for piece in pieces) > 15:
-                    print(f"[red]There can not be more than 16 white pieces.[/red]")
-                    bad_input = True
-                if sum(piece.color == chess.BLACK for piece in pieces) > 15:
-                    print(f"[red]There can not be more than 16 black pieces.[/red]")
-                    bad_input = True
-                if sum(piece.color == chess.BLACK for piece in pieces) > 15:
-                    print(f"[red]There can not be more than 16 black pieces.[/red]")
-                    bad_input = True
-                if sum(piece == Piece.from_symbol("P") for piece in pieces) > 8:
-                    print(f"[red]There can not be more than 8 white pawns.[/red]")
-                    bad_input = True
-                if sum(piece == Piece.from_symbol("p") for piece in pieces) > 8:
-                    print(f"[red]There can not be more than 8 black pawns.[/red]")
-                    bad_input = True
-                if bad_input:
-                    continue
-
-                self.prev_piece_symbols = piece_symbols
+                self.prev_pieces = pieces
             else:
                 pieces = self.positions[self.choices[choice]]
 
@@ -170,6 +126,50 @@ class Program:
                 print(f"https://lichess.org/?fen={quote(board.fen())}#ai")
             else:
                 print(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
+
+    @staticmethod
+    def read_custom() -> list[Piece] | None:
+        # Get input
+        print("[green]Enter custom pieces. White: QRNBP, black: qrnbp.[/green]")
+        piece_choice = input("Pieces: ")
+
+        # Parse input
+        bad_symbols = []
+        pieces = []
+        for symbol in [c for c in piece_choice if c and c != ","]:
+            if symbol == "K" or symbol == "k":
+                bad_symbols.append(symbol)
+            try:
+                piece = Piece.from_symbol(symbol)
+            except ValueError:
+                bad_symbols.append(symbol)
+            else:
+                pieces.append(piece)
+        if bad_symbols:
+            print(f"[red]Unknown piece(s): {', '.join(bad_symbols)}.[/red]")
+            return None
+
+        # Validate input
+        bad_input = False
+        if sum(piece.color == chess.WHITE for piece in pieces) > 15:
+            print(f"[red]There can not be more than 16 white pieces.[/red]")
+            bad_input = True
+        if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+            print(f"[red]There can not be more than 16 black pieces.[/red]")
+            bad_input = True
+        if sum(piece.color == chess.BLACK for piece in pieces) > 15:
+            print(f"[red]There can not be more than 16 black pieces.[/red]")
+            bad_input = True
+        if sum(piece == Piece.from_symbol("P") for piece in pieces) > 8:
+            print(f"[red]There can not be more than 8 white pawns.[/red]")
+            bad_input = True
+        if sum(piece == Piece.from_symbol("p") for piece in pieces) > 8:
+            print(f"[red]There can not be more than 8 black pawns.[/red]")
+            bad_input = True
+        if bad_input:
+            return None
+
+        return pieces
 
 
 if __name__ == "__main__":
