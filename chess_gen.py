@@ -24,6 +24,18 @@ WHITE_KING = Piece.from_symbol("K")
 BLACK_KING = Piece.from_symbol("k")
 
 
+class StopExecutionError(Exception):
+    """Error indicating that the user chose to quit the program."""
+
+
+class NeedHelpError(Exception):
+    """Error indicating that the user needs usage help."""
+
+
+class InvalidSelectionError(Exception):
+    """Error indicating that the user input was invalid."""
+
+
 def main() -> None:
     description = "Generate chess positions and practise on Lichess."
     parser = argparse.ArgumentParser(description=description)
@@ -109,6 +121,59 @@ class Program:
         columns = Columns([Panel(pos_table, title="Presets"), Panel(cmd_table, title="Commands")])
         rprint(columns)
 
+    def read_user_choice(self, prompt: str) -> list[Piece]:
+        """Prompt user for the next position to generate and parse users' input.
+
+        Args:
+            prompt: The user prompt to show in the terminal.
+
+        Returns:
+            A list of pieces based on user input. If no selection was made, then
+            an empty list is returned.
+        """
+        try:
+            user_input = input(prompt)
+        except EOFError:
+            raise StopExecutionError from None
+        if user_input.lower() == "h":
+            raise NeedHelpError
+        if not user_input:
+            return []
+
+        if user_input.isdecimal():
+            if user_input not in self.preset_choices:
+                rprint(
+                    f"[red]Not a valid preset choice: {user_input}. "
+                    "Please choose one of the following: "
+                    f"{', '.join(sorted(self.preset_choices))}.[/red]"
+                )
+                raise InvalidSelectionError
+            return self.PRESETS[self.preset_choices[user_input]]
+
+        pieces, bad_symbols = parse_pieces(user_input)
+        bad_input = False
+        if bad_symbols:
+            rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
+            bad_input = True
+        if WHITE_KING in pieces or BLACK_KING in pieces:
+            rprint("[red]Kings are added automatically, adding more kings is not possible.")
+            bad_input = True
+        if sum(piece.color == WHITE for piece in pieces) > 15:
+            rprint("[red]There can not be more than 16 white pieces.[/red]")
+            bad_input = True
+        if sum(piece.color == BLACK for piece in pieces) > 15:
+            rprint("[red]There can not be more than 16 black pieces.[/red]")
+            bad_input = True
+        if sum(piece == WHITE_PAWN for piece in pieces) > 8:
+            rprint("[red]There can not be more than 8 white pawns.[/red]")
+            bad_input = True
+        if sum(piece == BLACK_PAWN for piece in pieces) > 8:
+            rprint("[red]There can not be more than 8 black pawns.[/red]")
+            bad_input = True
+        if bad_input:
+            raise InvalidSelectionError
+        return pieces
+
     def loop(self) -> None:
         self.print_help()
         while True:
@@ -118,53 +183,20 @@ class Program:
             else:
                 prompt = "Position: "
             try:
-                choice = input(prompt)
-            except EOFError:
+                pieces = self.read_user_choice(prompt)
+            except StopExecutionError:
                 rprint("\nBye!")
                 return
-            if choice.lower() == "h":
+            except NeedHelpError:
                 self.print_help()
                 continue
-            if choice:
-                if choice.isdecimal():
-                    if choice not in self.preset_choices:
-                        rprint(
-                            f"[red]Not a valid preset choice: {choice}. "
-                            "Please choose one of the following: "
-                            f"{', '.join(sorted(self.preset_choices))}.[/red]"
-                        )
-                        continue
-                    pieces = self.PRESETS[self.preset_choices[choice]]
-                else:
-                    pieces, bad_symbols = parse_pieces(choice)
-                    bad_input = False
-                    if bad_symbols:
-                        rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
-                        bad_input = True
-                    if WHITE_KING in pieces or BLACK_KING in pieces:
-                        rprint(
-                            "[red]Kings are added automatically, adding more kings is not possible."
-                        )
-                        bad_input = True
-                    if sum(piece.color == WHITE for piece in pieces) > 15:
-                        rprint("[red]There can not be more than 16 white pieces.[/red]")
-                        bad_input = True
-                    if sum(piece.color == BLACK for piece in pieces) > 15:
-                        rprint("[red]There can not be more than 16 black pieces.[/red]")
-                        bad_input = True
-                    if sum(piece == WHITE_PAWN for piece in pieces) > 8:
-                        rprint("[red]There can not be more than 8 white pawns.[/red]")
-                        bad_input = True
-                    if sum(piece == BLACK_PAWN for piece in pieces) > 8:
-                        rprint("[red]There can not be more than 8 black pawns.[/red]")
-                        bad_input = True
-                    if bad_input:
-                        continue
-            else:
+            except InvalidSelectionError:
+                continue
+
+            if not pieces:
                 if not self.prev_pieces:
                     continue
                 pieces = self.prev_pieces
-
             self.prev_pieces = pieces
 
             board = init_board()
