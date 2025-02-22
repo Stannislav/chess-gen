@@ -83,15 +83,15 @@ class Program:
     def loop(self) -> None:
         self.print_help()
         while True:
-            try:
-                if self.prev_choice:
-                    if self.choices[self.prev_choice] == self.CUSTOM and self.prev_pieces:
-                        prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
-                        prompt = f"Position (enter = {self.CUSTOM} - {prev_pieces_str}): "
-                    else:
-                        prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
+            if self.prev_choice:
+                if self.choices[self.prev_choice] == self.CUSTOM and self.prev_pieces:
+                    prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
+                    prompt = f"Position (enter = {self.CUSTOM} - {prev_pieces_str}): "
                 else:
-                    prompt = "Position: "
+                    prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
+            else:
+                prompt = "Position: "
+            try:
                 choice = input(prompt)
             except EOFError:
                 rprint("\nBye!")
