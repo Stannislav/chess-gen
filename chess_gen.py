@@ -5,18 +5,13 @@ from __future__ import annotations
 import argparse
 import random
 import textwrap
-from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from chess import BLACK, PIECE_SYMBOLS, WHITE, Board, Piece
 from rich import print as rprint
 from rich.columns import Columns
-from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 __version__ = "1.1.0"
 
@@ -43,7 +38,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
     rprint(description)
-    Program().loop()
+    loop()
 
 
 def init_board() -> Board:
@@ -100,132 +95,109 @@ def parse_pieces(user_input: str) -> tuple[list[Piece], set[str]]:
     return pieces, bad_symbols
 
 
-class Program:
-    PRESETS: Mapping[str, list[Piece]] = {
-        "Q": [Piece.from_symbol("Q")],
-        "R": [Piece.from_symbol("R")],
-        "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
-        "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
-    }
+def print_help() -> None:
+    piece_input = """
+    Provide the symbols of the pieces to place on the board. White
+    pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
+    are automatically added and must not be part of the input.
+    You can separate piece symbols by commas and/or spaces.
+    Examples:
 
-    def __init__(self) -> None:
-        self.preset_choices = {str(i): key for i, key in enumerate(self.PRESETS, 1)}
-        self.prev_pieces: list[Piece] = []
+    Qr - queen against rook
+    R, p, p - rook against two pawns
+    N B B q - knight and two bishops against a queen
+    """
 
-    def print_help(self) -> None:
-        pos_table = Table(show_header=False, box=None)
-        for i, key in self.preset_choices.items():
-            pos_table.add_row(i, key)
-        cmd_table = Table(show_header=False, box=None)
-        cmd_table.add_row("h", "Help")
-        cmd_table.add_row("Enter", "Use previous input")
-        cmd_table.add_row("Ctrl+D", "Quit")
-        custom_input_info = """
-        Provide the symbols of the pieces to place on the board. White
-        pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
-        are automatically added and must not be part of the input.
-        You can separate piece symbols by commas and/or spaces.
-        Examples:
+    cmd_table = Table(show_header=False, box=None)
+    cmd_table.add_row("h", "Help")
+    cmd_table.add_row("Enter", "Use previous input")
+    cmd_table.add_row("Ctrl+D", "Quit")
 
-        Qr - queen against rook
-        R, p, p - rook against two pawns
-        N B B q - knight and two bishops against a queen
-        """
-        columns = Columns(
-            [
-                Group(
-                    Panel(pos_table, title="Presets"),
-                    Panel(cmd_table, title="Commands"),
-                ),
-                Panel(textwrap.dedent(custom_input_info), title="Custom Input"),
-            ]
-        )
-        rprint(columns)
+    columns = Columns(
+        [
+            Panel(textwrap.dedent(piece_input), title="Piece Input"),
+            Panel(cmd_table, title="Commands"),
+        ]
+    )
+    rprint(columns)
 
-    def read_user_choice(self, prompt: str) -> list[Piece]:
-        """Prompt user for the next position to generate and parse users' input.
 
-        Args:
-            prompt: The user prompt to show in the terminal.
+def read_user_choice(prompt: str) -> list[Piece]:
+    """Prompt user for the next position to generate and parse users' input.
 
-        Returns:
-            A list of pieces based on user input. If no selection was made, then
-            an empty list is returned.
-        """
+    Args:
+        prompt: The user prompt to show in the terminal.
+
+    Returns:
+        A list of pieces based on user input. If no selection was made, then
+        an empty list is returned.
+    """
+    try:
+        user_input = input(prompt)
+    except EOFError:
+        raise StopExecutionError from None
+    if user_input.lower() == "h":
+        raise NeedHelpError
+    if not user_input:
+        return []
+
+    pieces, bad_symbols = parse_pieces(user_input)
+    bad_input = False
+    if bad_symbols:
+        rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
+        bad_input = True
+    if WHITE_KING in pieces or BLACK_KING in pieces:
+        rprint("[red]Kings are added automatically, adding more kings is not possible.")
+        bad_input = True
+    if sum(piece.color == WHITE for piece in pieces) > 15:
+        rprint("[red]There can not be more than 16 white pieces.[/red]")
+        bad_input = True
+    if sum(piece.color == BLACK for piece in pieces) > 15:
+        rprint("[red]There can not be more than 16 black pieces.[/red]")
+        bad_input = True
+    if sum(piece == WHITE_PAWN for piece in pieces) > 8:
+        rprint("[red]There can not be more than 8 white pawns.[/red]")
+        bad_input = True
+    if sum(piece == BLACK_PAWN for piece in pieces) > 8:
+        rprint("[red]There can not be more than 8 black pawns.[/red]")
+        bad_input = True
+    if bad_input:
+        raise InvalidSelectionError
+    return pieces
+
+
+def loop() -> None:
+    print_help()
+    prev_pieces: list[Piece] = []
+    while True:
+        if prev_pieces:
+            prev_pieces_str = "".join(str(p) for p in prev_pieces)
+            prompt = f"Position (enter = {prev_pieces_str}): "
+        else:
+            prompt = "Position: "
         try:
-            user_input = input(prompt)
-        except EOFError:
-            raise StopExecutionError from None
-        if user_input.lower() == "h":
-            raise NeedHelpError
-        if not user_input:
-            return []
+            pieces = read_user_choice(prompt)
+        except StopExecutionError:
+            rprint("\nBye!")
+            return
+        except NeedHelpError:
+            print_help()
+            continue
+        except InvalidSelectionError:
+            continue
 
-        if user_input.isdecimal():
-            if user_input not in self.preset_choices:
-                rprint(
-                    f"[red]Not a valid preset choice: {user_input}. "
-                    "Please choose one of the following: "
-                    f"{', '.join(sorted(self.preset_choices))}.[/red]"
-                )
-                raise InvalidSelectionError
-            return self.PRESETS[self.preset_choices[user_input]]
-
-        pieces, bad_symbols = parse_pieces(user_input)
-        bad_input = False
-        if bad_symbols:
-            rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
-            bad_input = True
-        if WHITE_KING in pieces or BLACK_KING in pieces:
-            rprint("[red]Kings are added automatically, adding more kings is not possible.")
-            bad_input = True
-        if sum(piece.color == WHITE for piece in pieces) > 15:
-            rprint("[red]There can not be more than 16 white pieces.[/red]")
-            bad_input = True
-        if sum(piece.color == BLACK for piece in pieces) > 15:
-            rprint("[red]There can not be more than 16 black pieces.[/red]")
-            bad_input = True
-        if sum(piece == WHITE_PAWN for piece in pieces) > 8:
-            rprint("[red]There can not be more than 8 white pawns.[/red]")
-            bad_input = True
-        if sum(piece == BLACK_PAWN for piece in pieces) > 8:
-            rprint("[red]There can not be more than 8 black pawns.[/red]")
-            bad_input = True
-        if bad_input:
-            raise InvalidSelectionError
-        return pieces
-
-    def loop(self) -> None:
-        self.print_help()
-        while True:
-            if self.prev_pieces:
-                prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
-                prompt = f"Position (enter = {prev_pieces_str}): "
-            else:
-                prompt = "Position: "
-            try:
-                pieces = self.read_user_choice(prompt)
-            except StopExecutionError:
-                rprint("\nBye!")
-                return
-            except NeedHelpError:
-                self.print_help()
+        if not pieces:
+            if not prev_pieces:
                 continue
-            except InvalidSelectionError:
-                continue
+            pieces = prev_pieces
+        prev_pieces = pieces
 
-            if not pieces:
-                if not self.prev_pieces:
-                    continue
-                pieces = self.prev_pieces
-            self.prev_pieces = pieces
-
-            board = init_board()
-            if set_randomly(pieces, board):
-                rprint(board)
-                rprint(f"https://lichess.org/?fen={quote(board.fen())}#ai")
-            else:
-                rprint(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
+        board = init_board()
+        if set_randomly(pieces, board):
+            rprint(board)
+            rprint(f"https://lichess.org/?fen={quote(board.fen())}#ai")
+        else:
+            rprint(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
 
 
 if __name__ == "__main__":
