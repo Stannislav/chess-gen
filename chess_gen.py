@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import random
-from typing import Final
 from urllib.parse import quote
 
 from chess import BLACK, PIECE_SYMBOLS, WHITE, Board, Piece
@@ -17,6 +16,8 @@ __version__ = "1.1.0"
 
 WHITE_PAWN = Piece.from_symbol("P")
 BLACK_PAWN = Piece.from_symbol("p")
+WHITE_KING = Piece.from_symbol("K")
+BLACK_KING = Piece.from_symbol("k")
 
 
 def main() -> None:
@@ -54,41 +55,61 @@ def set_randomly(pieces: list[Piece], board: Board, *, check_game_over: bool = T
     return False
 
 
-class Program:
-    CUSTOM: Final[str] = "Custom"
+def parse_pieces(user_input: str) -> tuple[list[Piece], set[str]]:
+    """Parse chess pieces from user input.
 
+    Args:
+        user_input: A string represented a user input for a custom
+          piece configuration. The allowed piece symbols are P, N,
+          B, R, Q, K representing white pieces, and the same symbols
+          in lower case for black pieces. Commas and spaces may be
+          used to separate symbols and are stripped from the input
+          prior to parsing.
+
+    Returns:
+        This function returns a list of parsed pieces and a set of
+        characters that could not be parsed.
+    """
+    pieces: list[Piece] = []
+    bad_symbols: set[str] = set()
+    for c in user_input:
+        if c in (",", " "):
+            continue
+        if c.lower() in PIECE_SYMBOLS:
+            pieces.append(Piece.from_symbol(c))
+        else:
+            bad_symbols.add(c)
+    return pieces, bad_symbols
+
+
+class Program:
     def __init__(self) -> None:
-        self.positions = {
+        self.presets = {
             "Q": [Piece.from_symbol("Q")],
             "R": [Piece.from_symbol("R")],
             "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
             "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
-            self.CUSTOM: [],
         }
-        self.choices = {str(i): key for i, key in enumerate(self.positions, 1)}
-        self.prev_choice = ""
+        self.preset_choices = {str(i): key for i, key in enumerate(self.presets, 1)}
         self.prev_pieces: list[Piece] = []
 
     def print_help(self) -> None:
         pos_table = Table(show_header=False, box=None)
-        for i, key in self.choices.items():
+        for i, key in self.preset_choices.items():
             pos_table.add_row(i, key)
         cmd_table = Table(show_header=False, box=None)
         cmd_table.add_row("h", "Help")
         cmd_table.add_row("enter", "Use previous choice")
         cmd_table.add_row("Ctrl+D", "Quit")
-        columns = Columns([Panel(pos_table, title="Positions"), Panel(cmd_table, title="Commands")])
+        columns = Columns([Panel(pos_table, title="Presets"), Panel(cmd_table, title="Commands")])
         rprint(columns)
 
     def loop(self) -> None:
         self.print_help()
         while True:
-            if self.prev_choice:
-                if self.choices[self.prev_choice] == self.CUSTOM and self.prev_pieces:
-                    prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
-                    prompt = f"Position (enter = {self.CUSTOM} - {prev_pieces_str}): "
-                else:
-                    prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
+            if self.prev_pieces:
+                prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
+                prompt = f"Position (enter = {prev_pieces_str}): "
             else:
                 prompt = "Position: "
             try:
@@ -96,26 +117,50 @@ class Program:
             except EOFError:
                 rprint("\nBye!")
                 return
-            if choice == "h":
+            if choice.lower() == "h":
                 self.print_help()
                 continue
-            if not choice:
-                choice = self.prev_choice
+            if choice:
+                if choice.isdecimal():
+                    if choice not in self.preset_choices:
+                        rprint(
+                            f"[red]Not a valid preset choice: {choice}. "
+                            "Please choose one of the following: "
+                            f"{', '.join(sorted(self.preset_choices))}.[/red]"
+                        )
+                        continue
+                    pieces = self.presets[self.preset_choices[choice]]
+                else:
+                    pieces, bad_symbols = parse_pieces(choice)
+                    bad_input = False
+                    if bad_symbols:
+                        rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
+                        bad_input = True
+                    if WHITE_KING in pieces or BLACK_KING in pieces:
+                        rprint(
+                            "[red]Kings are added automatically, adding more kings is not possible."
+                        )
+                        bad_input = True
+                    if sum(piece.color == WHITE for piece in pieces) > 15:
+                        rprint("[red]There can not be more than 16 white pieces.[/red]")
+                        bad_input = True
+                    if sum(piece.color == BLACK for piece in pieces) > 15:
+                        rprint("[red]There can not be more than 16 black pieces.[/red]")
+                        bad_input = True
+                    if sum(piece == WHITE_PAWN for piece in pieces) > 8:
+                        rprint("[red]There can not be more than 8 white pawns.[/red]")
+                        bad_input = True
+                    if sum(piece == BLACK_PAWN for piece in pieces) > 8:
+                        rprint("[red]There can not be more than 8 black pawns.[/red]")
+                        bad_input = True
+                    if bad_input:
+                        continue
             else:
-                self.prev_pieces.clear()
-            if choice not in self.choices:
-                rprint("[red]Please enter a valid choice.[/red]")
-                continue
-            self.prev_choice = choice
-
-            position_idx = self.choices[choice]
-            if position_idx == self.CUSTOM:
-                pieces = self.prev_pieces or self.read_custom()
-                if not pieces:
+                if not self.prev_pieces:
                     continue
-                self.prev_pieces = pieces
-            else:
-                pieces = self.positions[self.choices[choice]]
+                pieces = self.prev_pieces
+
+            self.prev_pieces = pieces
 
             board = init_board()
             if set_randomly(pieces, board):
@@ -123,47 +168,6 @@ class Program:
                 rprint(f"https://lichess.org/?fen={quote(board.fen())}#ai")
             else:
                 rprint(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
-
-    @staticmethod
-    def read_custom() -> list[Piece]:
-        while True:
-            # Read input
-            prompt = "Enter custom pieces (QRNBPqrnbp, enter = abort):"
-            rprint(f"[green]{prompt}[/green] ", end="", flush=True)
-            piece_choice = input()
-            if not piece_choice:
-                return []
-
-            # Parse input
-            bad_symbols = set()
-            pieces = []
-            for symbol in [c for c in piece_choice if c and c != ","]:
-                if symbol == "K" or symbol == "k" or symbol.lower() not in PIECE_SYMBOLS:
-                    bad_symbols.add(symbol)
-                else:
-                    pieces.append(Piece.from_symbol(symbol))
-            if bad_symbols:
-                rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
-                continue
-
-            # Validate input
-            bad_input = False
-            if sum(piece.color == WHITE for piece in pieces) > 15:
-                rprint("[red]There can not be more than 16 white pieces.[/red]")
-                bad_input = True
-            if sum(piece.color == BLACK for piece in pieces) > 15:
-                rprint("[red]There can not be more than 16 black pieces.[/red]")
-                bad_input = True
-            if sum(piece == WHITE_PAWN for piece in pieces) > 8:
-                rprint("[red]There can not be more than 8 white pawns.[/red]")
-                bad_input = True
-            if sum(piece == BLACK_PAWN for piece in pieces) > 8:
-                rprint("[red]There can not be more than 8 black pawns.[/red]")
-                bad_input = True
-            if bad_input:
-                continue
-
-            return pieces
 
 
 if __name__ == "__main__":
