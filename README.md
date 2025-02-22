@@ -39,6 +39,23 @@ Position (enter = BN): ^D
 Bye!
 ```
 
+You can set the initial piece configuration directly in the command line:
+
+```text
+$ chessg Qr
+[...]
+. . . . . . . .
+. . . . . . . .
+. . . . . . . r
+. . . . . . . .
+. . . . . . Q .
+k . . . . . . .
+. . . . . . . .
+. K . . . . . .
+https://lichess.org/?fen=8/8/7r/8/6Q1/k7/8/1K6%20w%20-%20-%200%201#ai
+Position (enter = Qr):
+```
+
 ## Installation
 
 ```shell
