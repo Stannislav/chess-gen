@@ -14,7 +14,7 @@ from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 WHITE_PAWN = Piece.from_symbol("P")
 BLACK_PAWN = Piece.from_symbol("p")
@@ -25,10 +25,11 @@ MAX_PAWNS: Final[int] = 8
 HELP: Final[str] = """\
 Generate chess positions and practise on Lichess.
 
-Provide the symbols of the pieces to place on the board. White
-pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
-are automatically added and must not be part of the input.
-You can separate piece symbols by commas and/or spaces.
+Provide the symbols of the pieces to place on the
+board. White pieces are P, N, B, R, Q, black pieces
+are p, n, b, r, q. Kings are automatically added
+and must not be part of the input. You can separate
+piece symbols by commas and/or spaces.
 
 Examples:
 
