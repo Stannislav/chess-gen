@@ -11,17 +11,13 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 requires-python = ">=3.9"
 dependencies = ["chess", "rich"]
+optional-dependencies.dev = ["flit", "mypy", "ruff"]
+scripts.chessg = "chess_gen:main"
 
 [project.urls]
 Home = "https://github.com/Stannislav/chess-gen"
 Documentation = "https://github.com/Stannislav/chess-gen"
 Source = "https://github.com/Stannislav/chess-gen"
-
-[project.scripts]
-chessg = "chess_gen:main"
-
-[project.optional-dependencies]
-dev = ["flit", "mypy", "ruff"]
 
 [tool.ruff]
 target-version = "py39"
