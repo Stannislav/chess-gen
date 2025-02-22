@@ -122,7 +122,7 @@ def print_help() -> None:
     rprint(columns)
 
 
-def read_user_choice(prompt: str) -> list[Piece]:
+def read_user_input(prompt: str) -> list[Piece]:
     """Prompt user for the next position to generate and parse users' input.
 
     Args:
@@ -176,7 +176,7 @@ def loop() -> None:
         else:
             prompt = "Position: "
         try:
-            pieces = read_user_choice(prompt)
+            pieces = read_user_input(prompt)
         except StopExecutionError:
             rprint("\nBye!")
             return
