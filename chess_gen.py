@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import random
+import textwrap
 from typing import Final
 from urllib.parse import quote
 
@@ -17,14 +18,23 @@ __version__ = "1.1.0"
 
 WHITE_PAWN = Piece.from_symbol("P")
 BLACK_PAWN = Piece.from_symbol("p")
+WHITE_KING = Piece.from_symbol("K")
+BLACK_KING = Piece.from_symbol("k")
+MAX_PIECES: Final[int] = 16
+MAX_PAWNS: Final[int] = 8
+
+
+class InvalidInputError(Exception):
+    """Raised when the user input is invalid."""
 
 
 def main() -> None:
+    """Start the application."""
     description = "Generate chess positions and practise on Lichess."
     parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
     rprint(description)
-    Program().loop()
+    loop()
 
 
 def init_board() -> Board:
@@ -38,7 +48,7 @@ def init_board() -> Board:
 
 
 def set_randomly(pieces: list[Piece], board: Board, *, check_game_over: bool = True) -> bool:
-    """Set the piece on a random legal square on the board."""
+    """Set given pieces on the board randomly, and ensure the resulting position is valid."""
     if not pieces:
         return not (check_game_over and board.is_game_over())
 
@@ -54,118 +64,137 @@ def set_randomly(pieces: list[Piece], board: Board, *, check_game_over: bool = T
     return False
 
 
-class Program:
-    CUSTOM: Final[str] = "Custom"
+def parse_pieces(user_input: str) -> tuple[list[Piece], set[str]]:
+    """Parse chess pieces from user input.
 
-    def __init__(self) -> None:
-        self.positions = {
-            "Q": [Piece.from_symbol("Q")],
-            "R": [Piece.from_symbol("R")],
-            "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
-            "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
-            self.CUSTOM: [],
-        }
-        self.choices = {str(i): key for i, key in enumerate(self.positions, 1)}
-        self.prev_choice = ""
-        self.prev_pieces: list[Piece] = []
+    Args:
+        user_input: A string represented a user input for a custom
+          piece configuration. The allowed piece symbols are P, N,
+          B, R, Q, K representing white pieces, and the same symbols
+          in lower case for black pieces. Commas and spaces may be
+          used to separate symbols and are stripped from the input
+          prior to parsing.
 
-    def print_help(self) -> None:
-        pos_table = Table(show_header=False, box=None)
-        for i, key in self.choices.items():
-            pos_table.add_row(i, key)
-        cmd_table = Table(show_header=False, box=None)
-        cmd_table.add_row("h", "Help")
-        cmd_table.add_row("enter", "Use previous choice")
-        cmd_table.add_row("q, Ctrl+D", "Quit")
-        columns = Columns([Panel(pos_table, title="Positions"), Panel(cmd_table, title="Commands")])
-        rprint(columns)
+    Returns:
+        This function returns a list of parsed pieces and a set of
+        characters that could not be parsed.
 
-    def loop(self) -> None:
-        self.print_help()
-        while True:
-            try:
-                if self.prev_choice:
-                    if self.choices[self.prev_choice] == self.CUSTOM and self.prev_pieces:
-                        prev_pieces_str = "".join(str(p) for p in self.prev_pieces)
-                        prompt = f"Position (enter = {self.CUSTOM} - {prev_pieces_str}): "
-                    else:
-                        prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
-                else:
-                    prompt = "Position: "
-                choice = input(prompt).lower()
-            except EOFError:
-                choice = "q"
-            if choice == "q":
-                rprint("\nBye!")
-                return
-            if choice == "h":
-                self.print_help()
+    """
+    pieces: list[Piece] = []
+    bad_symbols: set[str] = set()
+    for c in user_input:
+        if c in (",", " "):
+            continue
+        if c.lower() in PIECE_SYMBOLS:
+            pieces.append(Piece.from_symbol(c))
+        else:
+            bad_symbols.add(c)
+    return pieces, bad_symbols
+
+
+def print_help() -> None:
+    """Print help on the command line."""
+    piece_input = """
+    Provide the symbols of the pieces to place on the board. White
+    pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
+    are automatically added and must not be part of the input.
+    You can separate piece symbols by commas and/or spaces.
+    Examples:
+
+    Qr - queen against rook
+    R, p, p - rook against two pawns
+    N B B q - knight and two bishops against a queen
+    """
+
+    cmd_table = Table(show_header=False, box=None)
+    cmd_table.add_row("h", "Help")
+    cmd_table.add_row("Enter", "Use previous input")
+    cmd_table.add_row("Ctrl+D", "Quit")
+
+    columns = Columns(
+        [
+            Panel(textwrap.dedent(piece_input), title="Piece Input"),
+            Panel(cmd_table, title="Commands"),
+        ]
+    )
+    rprint(columns)
+
+
+def parse_user_input(user_input: str) -> list[Piece]:
+    """Parse the piece configuration input provided by the user.
+
+    Args:
+        user_input: The user input.
+
+    Returns:
+        A list of pieces based on user input.
+
+    Raises:
+        InvalidInputError: when the user input is invalid and cannot be parsed.
+
+    """
+    pieces, bad_symbols = parse_pieces(user_input)
+    bad_input = False
+    if bad_symbols:
+        rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
+        bad_input = True
+    if WHITE_KING in pieces or BLACK_KING in pieces:
+        rprint("[red]Kings are added automatically, adding more kings is not possible.")
+        bad_input = True
+    if sum(piece.color == WHITE for piece in pieces) > MAX_PIECES - 1:
+        rprint(f"[red]There can not be more than {MAX_PIECES} white pieces.[/red]")
+        bad_input = True
+    if sum(piece.color == BLACK for piece in pieces) > MAX_PIECES - 1:
+        rprint(f"[red]There can not be more than {MAX_PIECES} black pieces.[/red]")
+        bad_input = True
+    if sum(piece == WHITE_PAWN for piece in pieces) > MAX_PAWNS:
+        rprint(f"[red]There can not be more than {MAX_PAWNS} white pawns.[/red]")
+        bad_input = True
+    if sum(piece == BLACK_PAWN for piece in pieces) > MAX_PAWNS:
+        rprint(f"[red]There can not be more than {MAX_PAWNS} black pawns.[/red]")
+        bad_input = True
+    if bad_input:
+        raise InvalidInputError
+    return pieces
+
+
+def loop() -> None:
+    """Run the main loop."""
+    print_help()
+    prev_pieces: list[Piece] = []
+    while True:
+        if prev_pieces:
+            prev_pieces_str = "".join(str(p) for p in prev_pieces)
+            prompt = f"Position (enter = {prev_pieces_str}): "
+        else:
+            prompt = "Position: "
+        try:
+            user_input = input(prompt)
+        except EOFError:
+            rprint("\nBye!")
+            return
+
+        if user_input == "h":
+            print_help()
+            continue
+
+        try:
+            pieces = parse_user_input(user_input)
+        except InvalidInputError:
+            continue
+
+        if not pieces:
+            if not prev_pieces:
                 continue
-            if not choice:
-                choice = self.prev_choice
-            else:
-                self.prev_pieces.clear()
-            if choice not in self.choices:
-                rprint("[red]Please enter a valid choice.[/red]")
-                continue
-            self.prev_choice = choice
+            pieces = prev_pieces
+        prev_pieces = pieces
 
-            position_idx = self.choices[choice]
-            if position_idx == self.CUSTOM:
-                pieces = self.prev_pieces or self.read_custom()
-                if not pieces:
-                    continue
-                self.prev_pieces = pieces
-            else:
-                pieces = self.positions[self.choices[choice]]
-
-            board = init_board()
-            if set_randomly(pieces, board):
-                rprint(board)
-                rprint(f"https://lichess.org/?fen={quote(board.fen())}#ai")
-            else:
-                rprint(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
-
-    @staticmethod
-    def read_custom() -> list[Piece]:
-        while True:
-            # Read input
-            prompt = "Enter custom pieces (QRNBPqrnbp, enter = abort):"
-            rprint(f"[green]{prompt}[/green] ", end="", flush=True)
-            piece_choice = input()
-            if not piece_choice:
-                return []
-
-            # Parse input
-            bad_symbols = set()
-            pieces = []
-            for symbol in [c for c in piece_choice if c and c != ","]:
-                if symbol == "K" or symbol == "k" or symbol.lower() not in PIECE_SYMBOLS:
-                    bad_symbols.add(symbol)
-                else:
-                    pieces.append(Piece.from_symbol(symbol))
-            if bad_symbols:
-                rprint(f"[red]Unknown pieces: {', '.join(sorted(bad_symbols))}.[/red]")
-                continue
-
-            # Validate input
-            bad_input = False
-            if sum(piece.color == WHITE for piece in pieces) > 15:
-                rprint("[red]There can not be more than 16 white pieces.[/red]")
-                bad_input = True
-            if sum(piece.color == BLACK for piece in pieces) > 15:
-                rprint("[red]There can not be more than 16 black pieces.[/red]")
-                bad_input = True
-            if sum(piece == WHITE_PAWN for piece in pieces) > 8:
-                rprint("[red]There can not be more than 8 white pawns.[/red]")
-                bad_input = True
-            if sum(piece == BLACK_PAWN for piece in pieces) > 8:
-                rprint("[red]There can not be more than 8 black pawns.[/red]")
-                bad_input = True
-            if bad_input:
-                continue
-
-            return pieces
+        board = init_board()
+        if set_randomly(pieces, board):
+            rprint(board)
+            rprint(f"https://lichess.org/?fen={quote(board.fen())}#ai")
+        else:
+            rprint(f"Cannot set {', '.join(str(p) for p in pieces)} on the board:\n{board}")
 
 
 if __name__ == "__main__":

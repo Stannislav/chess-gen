@@ -11,27 +11,22 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 requires-python = ">=3.9"
 dependencies = ["chess", "rich"]
+optional-dependencies.dev = ["flit", "mypy", "ruff"]
+scripts.chessg = "chess_gen:main"
 
 [project.urls]
 Home = "https://github.com/Stannislav/chess-gen"
 Documentation = "https://github.com/Stannislav/chess-gen"
 Source = "https://github.com/Stannislav/chess-gen"
 
-[project.scripts]
-chessg = "chess_gen:main"
-
-[project.optional-dependencies]
-dev = ["flit", "mypy", "ruff"]
-
 [tool.ruff]
 target-version = "py39"
 line-length = 100
 lint.select = ["ALL"]
 lint.ignore = [
-    "C90",    # mccabe, TODO: fix
     "COM812", # flake8-commas, missing-trailing-comma, conflicts with ruff format
-    "D",      # pydocstyle, TODO: fix
-    "PLR",    # Pylint - Refactor, TODO: fix
+    "D203",   # 1 blank line required before class docstring, incompatible with D211
+    "D213",   # Multi-line docstring summary should start at the second line, incompatible with D212
     "S311",   # flake8-bandit, suspicious-non-cryptographic-random-usage, false positive
 ]
 
