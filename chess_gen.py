@@ -14,7 +14,7 @@ from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 WHITE_PAWN = Piece.from_symbol("P")
 BLACK_PAWN = Piece.from_symbol("p")
