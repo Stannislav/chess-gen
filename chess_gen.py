@@ -26,6 +26,7 @@ class InvalidInputError(Exception):
 
 
 def main() -> None:
+    """Start the application."""
     description = "Generate chess positions and practise on Lichess."
     parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
@@ -74,6 +75,7 @@ def parse_pieces(user_input: str) -> tuple[list[Piece], set[str]]:
     Returns:
         This function returns a list of parsed pieces and a set of
         characters that could not be parsed.
+
     """
     pieces: list[Piece] = []
     bad_symbols: set[str] = set()
@@ -126,6 +128,7 @@ def parse_user_input(user_input: str) -> list[Piece]:
 
     Raises:
         InvalidInputError: when the user input is invalid and cannot be parsed.
+
     """
     pieces, bad_symbols = parse_pieces(user_input)
     bad_input = False
@@ -153,7 +156,7 @@ def parse_user_input(user_input: str) -> list[Piece]:
 
 
 def loop() -> None:
-    """The main loop."""
+    """Run the main loop."""
     print_help()
     prev_pieces: list[Piece] = []
     while True:

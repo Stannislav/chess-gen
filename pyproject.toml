@@ -29,8 +29,9 @@ line-length = 100
 lint.select = ["ALL"]
 lint.ignore = [
     "C90",    # mccabe, TODO: fix
+    "D203",   # 1 blank line required before class docstring, incompatible with D211
+    "D213",   # Multi-line docstring summary should start at the second line, incompatible with D212
     "COM812", # flake8-commas, missing-trailing-comma, conflicts with ruff format
-    "D",      # pydocstyle, TODO: fix
     "PLR",    # Pylint - Refactor, TODO: fix
     "S311",   # flake8-bandit, suspicious-non-cryptographic-random-usage, false positive
 ]
