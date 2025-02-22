@@ -21,16 +21,8 @@ WHITE_KING = Piece.from_symbol("K")
 BLACK_KING = Piece.from_symbol("k")
 
 
-class StopExecutionError(Exception):
-    """Error indicating that the user chose to quit the program."""
-
-
-class NeedHelpError(Exception):
-    """Error indicating that the user needs usage help."""
-
-
-class InvalidSelectionError(Exception):
-    """Error indicating that the user input was invalid."""
+class InvalidInputError(Exception):
+    """Raised when the user input is invalid."""
 
 
 def main() -> None:
@@ -96,6 +88,7 @@ def parse_pieces(user_input: str) -> tuple[list[Piece], set[str]]:
 
 
 def print_help() -> None:
+    """Print help on the command line."""
     piece_input = """
     Provide the symbols of the pieces to place on the board. White
     pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
@@ -122,25 +115,18 @@ def print_help() -> None:
     rprint(columns)
 
 
-def read_user_input(prompt: str) -> list[Piece]:
-    """Prompt user for the next position to generate and parse users' input.
+def parse_user_input(user_input: str) -> list[Piece]:
+    """Parse the piece configuration input provided by the user.
 
     Args:
-        prompt: The user prompt to show in the terminal.
+        user_input: The user input.
 
     Returns:
-        A list of pieces based on user input. If no selection was made, then
-        an empty list is returned.
-    """
-    try:
-        user_input = input(prompt)
-    except EOFError:
-        raise StopExecutionError from None
-    if user_input.lower() == "h":
-        raise NeedHelpError
-    if not user_input:
-        return []
+        A list of pieces based on user input.
 
+    Raises:
+        InvalidInputError: when the user input is invalid and cannot be parsed.
+    """
     pieces, bad_symbols = parse_pieces(user_input)
     bad_input = False
     if bad_symbols:
@@ -162,11 +148,12 @@ def read_user_input(prompt: str) -> list[Piece]:
         rprint("[red]There can not be more than 8 black pawns.[/red]")
         bad_input = True
     if bad_input:
-        raise InvalidSelectionError
+        raise InvalidInputError
     return pieces
 
 
 def loop() -> None:
+    """The main loop."""
     print_help()
     prev_pieces: list[Piece] = []
     while True:
@@ -176,14 +163,18 @@ def loop() -> None:
         else:
             prompt = "Position: "
         try:
-            pieces = read_user_input(prompt)
-        except StopExecutionError:
+            user_input = input(prompt)
+        except EOFError:
             rprint("\nBye!")
             return
-        except NeedHelpError:
+
+        if user_input == "h":
             print_help()
             continue
-        except InvalidSelectionError:
+
+        try:
+            pieces = parse_user_input(user_input)
+        except InvalidInputError:
             continue
 
         if not pieces:
