@@ -43,7 +43,7 @@ def init_board() -> Board:
 
 
 def set_randomly(pieces: list[Piece], board: Board, *, check_game_over: bool = True) -> bool:
-    """Set the piece on a random legal square on the board."""
+    """Set given pieces on the board randomly, and ensure the resulting position is valid."""
     if not pieces:
         return not (check_game_over and board.is_game_over())
 
