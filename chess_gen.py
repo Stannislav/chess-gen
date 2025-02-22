@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import argparse
 import random
+import textwrap
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from chess import BLACK, PIECE_SYMBOLS, WHITE, Board, Piece
 from rich import print as rprint
 from rich.columns import Columns
+from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
 
@@ -116,9 +118,28 @@ class Program:
             pos_table.add_row(i, key)
         cmd_table = Table(show_header=False, box=None)
         cmd_table.add_row("h", "Help")
-        cmd_table.add_row("enter", "Use previous choice")
+        cmd_table.add_row("Enter", "Use previous input")
         cmd_table.add_row("Ctrl+D", "Quit")
-        columns = Columns([Panel(pos_table, title="Presets"), Panel(cmd_table, title="Commands")])
+        custom_input_info = """
+        Provide the symbols of the pieces to place on the board. White
+        pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
+        are automatically added and must not be part of the input.
+        You can separate piece symbols by commas and/or spaces.
+        Examples:
+
+        Qr - queen against rook
+        R, p, p - rook against two pawns
+        N B B q - knight and two bishops against a queen
+        """
+        columns = Columns(
+            [
+                Group(
+                    Panel(pos_table, title="Presets"),
+                    Panel(cmd_table, title="Commands"),
+                ),
+                Panel(textwrap.dedent(custom_input_info), title="Custom Input"),
+            ]
+        )
         rprint(columns)
 
     def read_user_choice(self, prompt: str) -> list[Piece]:
