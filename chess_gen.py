@@ -76,7 +76,7 @@ class Program:
         cmd_table = Table(show_header=False, box=None)
         cmd_table.add_row("h", "Help")
         cmd_table.add_row("enter", "Use previous choice")
-        cmd_table.add_row("q, Ctrl+D", "Quit")
+        cmd_table.add_row("Ctrl+D", "Quit")
         columns = Columns([Panel(pos_table, title="Positions"), Panel(cmd_table, title="Commands")])
         rprint(columns)
 
@@ -92,10 +92,8 @@ class Program:
                         prompt = f"Position (enter = {self.choices[self.prev_choice]}): "
                 else:
                     prompt = "Position: "
-                choice = input(prompt).lower()
+                choice = input(prompt)
             except EOFError:
-                choice = "q"
-            if choice == "q":
                 rprint("\nBye!")
                 return
             if choice == "h":
