@@ -25,10 +25,11 @@ MAX_PAWNS: Final[int] = 8
 HELP: Final[str] = """\
 Generate chess positions and practise on Lichess.
 
-Provide the symbols of the pieces to place on the board. White
-pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
-are automatically added and must not be part of the input.
-You can separate piece symbols by commas and/or spaces.
+Provide the symbols of the pieces to place on the board.
+White pieces are P, N, B, R, Q, black pieces are p, n,
+b, r, q. Kings are automatically added and must not be
+part of the input. You can separate piece symbols by
+commas and/or spaces.
 
 Examples:
 
