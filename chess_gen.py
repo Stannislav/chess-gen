@@ -22,6 +22,20 @@ WHITE_KING = Piece.from_symbol("K")
 BLACK_KING = Piece.from_symbol("k")
 MAX_PIECES: Final[int] = 16
 MAX_PAWNS: Final[int] = 8
+HELP: Final[str] = """\
+Generate chess positions and practise on Lichess.
+
+Provide the symbols of the pieces to place on the board. White
+pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
+are automatically added and must not be part of the input.
+You can separate piece symbols by commas and/or spaces.
+
+Examples:
+
+Qr - queen against rook
+R, p, p - rook against two pawns
+N B B q - knight and two bishops against a queen
+"""
 
 
 class InvalidInputError(Exception):
@@ -30,11 +44,13 @@ class InvalidInputError(Exception):
 
 def main() -> None:
     """Start the application."""
-    description = "Generate chess positions and practise on Lichess."
-    parser = argparse.ArgumentParser(description=description)
-    parser.parse_args()
-    rprint(description)
-    loop()
+    parser = argparse.ArgumentParser(
+        description=HELP,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("pieces", nargs="*", help="Pieces to put on the board.")
+    args = parser.parse_args()
+    loop(" ".join(args.pieces))
 
 
 def init_board() -> Board:
@@ -94,18 +110,6 @@ def parse_pieces(user_input: str) -> tuple[list[Piece], set[str]]:
 
 def print_help() -> None:
     """Print help on the command line."""
-    piece_input = """
-    Provide the symbols of the pieces to place on the board. White
-    pieces are P, N, B, R, Q, black pieces are p, n, b, r, q. Kings
-    are automatically added and must not be part of the input.
-    You can separate piece symbols by commas and/or spaces.
-    Examples:
-
-    Qr - queen against rook
-    R, p, p - rook against two pawns
-    N B B q - knight and two bishops against a queen
-    """
-
     cmd_table = Table(show_header=False, box=None)
     cmd_table.add_row("h", "Help")
     cmd_table.add_row("Enter", "Use previous input")
@@ -113,7 +117,7 @@ def print_help() -> None:
 
     columns = Columns(
         [
-            Panel(textwrap.dedent(piece_input), title="Piece Input"),
+            Panel(textwrap.dedent(HELP), title="Piece Input"),
             Panel(cmd_table, title="Commands"),
         ]
     )
@@ -158,7 +162,7 @@ def parse_user_input(user_input: str) -> list[Piece]:
     return pieces
 
 
-def loop() -> None:
+def loop(cli_input: str) -> None:
     """Run the main loop."""
     print_help()
     prev_pieces: list[Piece] = []
@@ -169,7 +173,8 @@ def loop() -> None:
         else:
             prompt = "Position: "
         try:
-            user_input = input(prompt)
+            user_input = cli_input or input(prompt)
+            cli_input = ""
         except EOFError:
             rprint("\nBye!")
             return
