@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import random
 import textwrap
+from typing import Final
 from urllib.parse import quote
 
 from chess import BLACK, PIECE_SYMBOLS, WHITE, Board, Piece
@@ -19,6 +20,8 @@ WHITE_PAWN = Piece.from_symbol("P")
 BLACK_PAWN = Piece.from_symbol("p")
 WHITE_KING = Piece.from_symbol("K")
 BLACK_KING = Piece.from_symbol("k")
+MAX_PIECES: Final[int] = 16
+MAX_PAWNS: Final[int] = 8
 
 
 class InvalidInputError(Exception):
@@ -138,17 +141,17 @@ def parse_user_input(user_input: str) -> list[Piece]:
     if WHITE_KING in pieces or BLACK_KING in pieces:
         rprint("[red]Kings are added automatically, adding more kings is not possible.")
         bad_input = True
-    if sum(piece.color == WHITE for piece in pieces) > 15:
-        rprint("[red]There can not be more than 16 white pieces.[/red]")
+    if sum(piece.color == WHITE for piece in pieces) > MAX_PIECES - 1:
+        rprint(f"[red]There can not be more than {MAX_PIECES} white pieces.[/red]")
         bad_input = True
-    if sum(piece.color == BLACK for piece in pieces) > 15:
-        rprint("[red]There can not be more than 16 black pieces.[/red]")
+    if sum(piece.color == BLACK for piece in pieces) > MAX_PIECES - 1:
+        rprint(f"[red]There can not be more than {MAX_PIECES} black pieces.[/red]")
         bad_input = True
-    if sum(piece == WHITE_PAWN for piece in pieces) > 8:
-        rprint("[red]There can not be more than 8 white pawns.[/red]")
+    if sum(piece == WHITE_PAWN for piece in pieces) > MAX_PAWNS:
+        rprint(f"[red]There can not be more than {MAX_PAWNS} white pawns.[/red]")
         bad_input = True
-    if sum(piece == BLACK_PAWN for piece in pieces) > 8:
-        rprint("[red]There can not be more than 8 black pawns.[/red]")
+    if sum(piece == BLACK_PAWN for piece in pieces) > MAX_PAWNS:
+        rprint(f"[red]There can not be more than {MAX_PAWNS} black pawns.[/red]")
         bad_input = True
     if bad_input:
         raise InvalidInputError
