@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import random
+from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from chess import BLACK, PIECE_SYMBOLS, WHITE, Board, Piece
@@ -11,6 +12,9 @@ from rich import print as rprint
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 __version__ = "1.1.0"
 
@@ -83,14 +87,15 @@ def parse_pieces(user_input: str) -> tuple[list[Piece], set[str]]:
 
 
 class Program:
+    PRESETS: Mapping[str, list[Piece]] = {
+        "Q": [Piece.from_symbol("Q")],
+        "R": [Piece.from_symbol("R")],
+        "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
+        "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
+    }
+
     def __init__(self) -> None:
-        self.presets = {
-            "Q": [Piece.from_symbol("Q")],
-            "R": [Piece.from_symbol("R")],
-            "B+B": [Piece.from_symbol("B"), Piece.from_symbol("B")],
-            "B+N": [Piece.from_symbol("B"), Piece.from_symbol("N")],
-        }
-        self.preset_choices = {str(i): key for i, key in enumerate(self.presets, 1)}
+        self.preset_choices = {str(i): key for i, key in enumerate(self.PRESETS, 1)}
         self.prev_pieces: list[Piece] = []
 
     def print_help(self) -> None:
@@ -129,7 +134,7 @@ class Program:
                             f"{', '.join(sorted(self.preset_choices))}.[/red]"
                         )
                         continue
-                    pieces = self.presets[self.preset_choices[choice]]
+                    pieces = self.PRESETS[self.preset_choices[choice]]
                 else:
                     pieces, bad_symbols = parse_pieces(choice)
                     bad_input = False
